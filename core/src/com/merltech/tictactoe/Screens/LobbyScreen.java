@@ -6,6 +6,8 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -55,8 +57,9 @@ public class LobbyScreen implements Screen {
     private void setupUi() {
         stage = new Stage(new ScreenViewport());
 
-        Texture background = new Texture(Gdx.files.local("bluetooth.png"));
-        Drawable drawable = new TextureRegionDrawable(new TextureRegion(background));
+
+        Texture bluetoothIcon = new Texture(Gdx.files.local("bluetooth.png"));
+        Drawable drawable = new TextureRegionDrawable(new TextureRegion(bluetoothIcon));
         bluetoothButton = new ImageButton(drawable);
 
         noBluetoothDialog = new Dialog("No Bluetooth", skin) {
@@ -118,7 +121,6 @@ public class LobbyScreen implements Screen {
         });
 
         Table rootTable = new Table(skin);
-        rootTable.setDebug(true);
         rootTable.setFillParent(true);
 
         Label titleLabel = new Label("Tic Tac Toe", skin, "big-font", Color.BLACK);
@@ -131,7 +133,6 @@ public class LobbyScreen implements Screen {
         connectLabel = new Label("Connect", skin, "small-font", Color.BLACK);
         peerTable.add(connectLabel).right();
         peerTable.pad(Value.zero, Value.percentWidth(0.03f, rootTable), Value.zero, Value.percentWidth(0.03f, rootTable));
-        peerTable.setDebug(true);
         rootTable.add(peerTable).fillX();
 
         rootTable.row().bottom();
@@ -237,8 +238,12 @@ public class LobbyScreen implements Screen {
             bluetoothButton.getImage().setColor(brightness, brightness, brightness, 1.0f);
         }
         processMessages();
+
         Gdx.gl.glClearColor(0.8f, 0.8f, 0.8f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        game.batch.begin();
+        game.batch.draw(game.background, 0, 0);
+        game.batch.end();
         stage.act();
         stage.draw();
     }

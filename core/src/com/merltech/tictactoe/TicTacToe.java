@@ -4,7 +4,9 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
@@ -21,7 +23,9 @@ import java.io.OutputStream;
 public class TicTacToe extends Game {
     private SVGService svgService;
     private final float density;
+    public SpriteBatch batch;
 	public Skin skin;
+    public Texture background;
     public InputMultiplexer inputMultiplexer;
     public BluetoothService bluetoothService;
 
@@ -38,8 +42,12 @@ public class TicTacToe extends Game {
 
 	@Override
 	public void create () {
+        this.batch = new SpriteBatch();
+
         generateGraphics();
         generateFonts();
+
+        background = new Texture(Gdx.files.local("background.png"));
 
         inputMultiplexer = new InputMultiplexer();
 		Gdx.input.setInputProcessor(inputMultiplexer);
@@ -58,6 +66,9 @@ public class TicTacToe extends Game {
         svgService.svg2png(inputStream, outputStream);
         inputStream = Gdx.files.internal("ui/connect.svg").read();
         outputStream = Gdx.files.local("connect.png").write(false);
+        svgService.svg2png(inputStream, outputStream);
+        inputStream = Gdx.files.internal("ui/background.svg").read();
+        outputStream = Gdx.files.local("background.png").write(false);
         svgService.svg2png(inputStream, outputStream);
     }
 

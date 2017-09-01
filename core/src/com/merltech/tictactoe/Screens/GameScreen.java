@@ -5,6 +5,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.Touchable;
@@ -34,6 +35,8 @@ public class GameScreen implements Screen {
     private Dialog endDialog;
     private Dialog errorDialog;
     private Label errorDialogLabel;
+    private Label waitingForOpponentLabel;
+    private boolean waitingForOpponent = false;
 
     private final String Tag = "Game";
 
@@ -83,6 +86,9 @@ public class GameScreen implements Screen {
 
         Label titleLabel = new Label("Tic Tac Toe", skin, "big-font", Color.BLACK);
         rootTable.add(titleLabel).center().expandX();
+
+        waitingForOpponentLabel = new Label("Waiting for opponent", skin);
+        waitingForOpponentLabel.setPosition(Gdx.graphics.getWidth() / 2 - waitingForOpponentLabel.getWidth() / 2, Gdx.graphics.getHeight() / 2 - waitingForOpponentLabel.getHeight() / 2);
 
         rootTable.row().expandY().top();
         Table gameTable = new Table(skin);
@@ -139,6 +145,7 @@ public class GameScreen implements Screen {
         rootTable.add(buttonTable).fillX();
 
         stage.addActor(rootTable);
+        stage.addActor(waitingForOpponentLabel);
     }
 
     private void processMessages() {
@@ -148,6 +155,7 @@ public class GameScreen implements Screen {
             switch(message.code) {
                 case BLUETOOTH_CONNECTED:
                     Gdx.app.log(Tag, "we have a connection");
+                    waitingForOpponent = false;
                     break;
                 case BLUETOOTH_ADAPTER_DISABLED:
                     // this is bad, we have to stop the game
@@ -240,10 +248,16 @@ public class GameScreen implements Screen {
                     }
                 }
             }, 30);
+
+            // we need to show the user that he is waiting, could be some fancy animation someday :)
+            waitingForOpponent = true;
         } else {
             // we are just a client so our id is 1
             playerValue = 1;
             enableButtons();
+
+            //no need to wait
+            waitingForOpponent = false;
         }
     }
 
@@ -275,6 +289,10 @@ public class GameScreen implements Screen {
         processMessages();
         Gdx.gl.glClearColor(0.8f, 0.8f, 0.8f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        game.batch.begin();
+        game.batch.draw(game.background, 0, 0);
+        game.batch.end();
+        waitingForOpponentLabel.setVisible(waitingForOpponent);
         stage.act();
         stage.draw();
     }
