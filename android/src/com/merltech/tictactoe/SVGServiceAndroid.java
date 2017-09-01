@@ -25,8 +25,8 @@ public class SVGServiceAndroid implements SVGService {
     public boolean svg2png(InputStream input, OutputStream output) {
         try {
             SVG svg = SVG.getFromInputStream(input);
-            svg.setDocumentHeight(svg.getDocumentHeight() * density / 200);
-            svg.setDocumentWidth(svg.getDocumentWidth() * density / 200);
+            svg.setDocumentHeight(svg.getDocumentHeight() * density / 159.372f);
+            svg.setDocumentWidth(svg.getDocumentWidth() * density / 159.372f);
             Bitmap bitmap = Bitmap.createBitmap((int)Math.ceil(svg.getDocumentWidth()), (int)Math.ceil(svg.getDocumentHeight()), Bitmap.Config.ARGB_8888);
             Canvas canvas = new Canvas();
             canvas.setBitmap(bitmap);
