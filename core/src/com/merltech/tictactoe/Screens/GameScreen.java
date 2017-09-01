@@ -1,7 +1,9 @@
 package com.merltech.tictactoe.Screens;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -14,6 +16,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Value;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Timer;
+import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.merltech.tictactoe.TicTacToe;
 import com.merltech.tictactoe.network.BluetoothService;
@@ -29,6 +32,8 @@ public class GameScreen implements Screen {
     private final int[][] field;
     private final TextButton[][] buttons;
     private Dialog endDialog;
+    private Dialog errorDialog;
+    private Label errorDialogLabel;
 
     private final String Tag = "Game";
 
@@ -76,7 +81,8 @@ public class GameScreen implements Screen {
         Table rootTable = new Table(skin);
         rootTable.setFillParent(true);
 
-        rootTable.add(new Label("Tic Tac Toe", skin)).center().expandX();
+        Label titleLabel = new Label("Tic Tac Toe", skin, "big-font", Color.BLACK);
+        rootTable.add(titleLabel).center().expandX();
 
         rootTable.row().expandY().top();
         Table gameTable = new Table(skin);
@@ -114,7 +120,17 @@ public class GameScreen implements Screen {
                 game.setScreen(game.lobbyScreen);
             };
         };
-        endDialog.button("back", 1);
+        endDialog.button("Okay", 1);
+
+        errorDialog = new Dialog("Error", skin) {
+            protected void result(Object object) {
+                bluetoothService.disconnect();
+                game.setScreen(game.lobbyScreen);
+            }
+        };
+        errorDialogLabel = new Label("error", skin);
+        errorDialog.text(errorDialogLabel);
+        errorDialog.button("Okay");
 
         rootTable.add(gameTable).grow();
 
@@ -166,6 +182,17 @@ public class GameScreen implements Screen {
     private void checkWinner() {
         int winner = getWinner();
         if(winner == 0) {
+            boolean draw = true;
+            for(int column = 0; column < 3; ++column) {
+                for(int row = 0; row < 3; ++row) {
+                    if(field[column][row] != 0)
+                        draw = false;
+                }
+            }
+            if(draw) {
+                endDialog.getTitleLabel().setText("It is a draw");
+                endDialog.show(stage);
+            }
             return;
         }
         if(winner == playerValue) {
@@ -178,7 +205,8 @@ public class GameScreen implements Screen {
     }
 
     private void showError(String s) {
-        Gdx.app.log(Tag, "error: " + s + " returning to lobby");
+        errorDialogLabel.setText(s);
+        errorDialog.show(stage);
     }
 
     @Override
@@ -200,6 +228,18 @@ public class GameScreen implements Screen {
             playerValue = -1;
             // the client always begins
             disableButtons();
+
+            // schedule a timeout because we are only visible for 30 seconds
+            Timer.schedule(new Timer.Task() {
+                int n = 0;
+                @Override
+                public void run() {
+                    ++n;
+                    if(n > 30) {
+                        showError("no one connected");
+                    }
+                }
+            }, 30);
         } else {
             // we are just a client so our id is 1
             playerValue = 1;
@@ -227,6 +267,11 @@ public class GameScreen implements Screen {
 
     @Override
     public void render(float delta) {
+        if(Gdx.input.isKeyJustPressed(Input.Keys.BACK)) {
+            Gdx.app.log(Tag, "back key was pressed, returning to lobby");
+            bluetoothService.disconnect();
+            game.setScreen(game.lobbyScreen);
+        }
         processMessages();
         Gdx.gl.glClearColor(0.8f, 0.8f, 0.8f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
