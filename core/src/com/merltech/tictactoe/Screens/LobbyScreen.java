@@ -6,17 +6,12 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
@@ -24,7 +19,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Value;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.merltech.tictactoe.TicTacToe;
 import com.merltech.tictactoe.network.BluetoothService;
@@ -223,6 +217,7 @@ public class LobbyScreen implements Screen {
         Gdx.app.log(Tag, "showing");
         game.inputMultiplexer.addProcessor(stage);
         float brightness = bluetoothService.isEnabled() ? 1.0f : 0.3f;
+        animateBluetooth = false;
         bluetoothButton.getImage().setColor(brightness, brightness, brightness, 1.0f);
     }
 
@@ -265,6 +260,8 @@ public class LobbyScreen implements Screen {
 
     @Override
     public void hide() {
+        Gdx.app.log(Tag, "hiding");
+        game.inputMultiplexer.clear();
 
     }
 

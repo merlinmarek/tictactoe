@@ -10,7 +10,6 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.caverock.androidsvg.SVG;
 import com.merltech.tictactoe.Screens.GameScreen;
 import com.merltech.tictactoe.Screens.LobbyScreen;
 import com.merltech.tictactoe.graphics.SVGService;
@@ -69,6 +68,15 @@ public class TicTacToe extends Game {
         svgService.svg2png(inputStream, outputStream);
         inputStream = Gdx.files.internal("ui/background.svg").read();
         outputStream = Gdx.files.local("background.png").write(false);
+        svgService.svg2png(inputStream, outputStream);
+        inputStream = Gdx.files.internal("ui/field.svg").read();
+        outputStream = Gdx.files.local("field.png").write(false);
+        svgService.svg2png(inputStream, outputStream);
+        inputStream = Gdx.files.internal("ui/X.svg").read();
+        outputStream = Gdx.files.local("X.png").write(false);
+        svgService.svg2png(inputStream, outputStream);
+        inputStream = Gdx.files.internal("ui/O.svg").read();
+        outputStream = Gdx.files.local("O.png").write(false);
         svgService.svg2png(inputStream, outputStream);
     }
 

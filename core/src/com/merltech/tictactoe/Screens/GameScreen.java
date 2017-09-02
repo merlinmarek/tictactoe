@@ -5,19 +5,16 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
-import com.badlogic.gdx.scenes.scene2d.ui.Value;
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Timer;
-import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.merltech.tictactoe.TicTacToe;
 import com.merltech.tictactoe.network.BluetoothService;
@@ -28,15 +25,17 @@ public class GameScreen implements Screen {
     private final BluetoothService bluetoothService;
     private Skin skin;
     private Stage stage;
+    private Sprite fieldSprite;
+    private Sprite oSprite;
+    private Sprite xSprite;
 
     private int playerValue;
     private final int[][] field;
-    private final TextButton[][] buttons;
-    private Dialog endDialog;
-    private Dialog errorDialog;
-    private Label errorDialogLabel;
-    private Label waitingForOpponentLabel;
-    private boolean waitingForOpponent = false;
+    private Dialog dialog;
+    private Label dialogLabel;
+    private boolean gameRunning = false;
+    private boolean hasTurn = false;
+    private Rectangle[][] collisionRectangles;
 
     private final String Tag = "Game";
 
@@ -46,9 +45,10 @@ public class GameScreen implements Screen {
         this.bluetoothService = game.bluetoothService;
         playerValue = 0;
         field = new int[3][3];
-        buttons = new TextButton[3][3];
 
         setupUi();
+        oSprite = new Sprite(new Texture(Gdx.files.local("O.png")));
+        xSprite = new Sprite(new Texture(Gdx.files.local("X.png")));
     }
 
     private int getWinner() {
@@ -85,67 +85,32 @@ public class GameScreen implements Screen {
         rootTable.setFillParent(true);
 
         Label titleLabel = new Label("Tic Tac Toe", skin, "big-font", Color.BLACK);
-        rootTable.add(titleLabel).center().expandX();
+        rootTable.add(titleLabel);
+        rootTable.center().top();
 
-        waitingForOpponentLabel = new Label("Waiting for opponent", skin);
-        waitingForOpponentLabel.setPosition(Gdx.graphics.getWidth() / 2 - waitingForOpponentLabel.getWidth() / 2, Gdx.graphics.getHeight() / 2 - waitingForOpponentLabel.getHeight() / 2);
+        stage.addActor(rootTable);
 
-        rootTable.row().expandY().top();
-        Table gameTable = new Table(skin);
-        for(int column = 0; column < 3; ++column) {
-            gameTable.row();
-            for(int row = 0; row < 3; ++row) {
-                final TextButton button = new TextButton("", skin);
-                button.getLabel().setFontScale(2.0f);
-                final int buttonColumn = column;
-                final int buttonRow = row;
-                button.addListener(new ClickListener() {
-                    @Override
-                    public void clicked(InputEvent event, float x, float y) {
-                        if(field[buttonColumn][buttonRow] != 0) {
-                            // already clicked
-                            return;
-                        }
-                        field[buttonColumn][buttonRow] = playerValue;
-                        buttons[buttonColumn][buttonRow].setText(playerValue == 1 ? "X" : "O");
-                        disableButtons();
-                        String position = String.valueOf(buttonColumn) + String.valueOf(buttonRow);
-                        String data = playerValue == 1 ? position + "X" : position + "O";
-                        bluetoothService.write(data.getBytes());
-                        checkWinner();
-                    }
-                });
-                gameTable.add(button).width(Value.percentWidth(0.333333f, gameTable));
-                buttons[column][row] = button;
-            }
-        }
-
-        endDialog = new Dialog("End Game", skin) {
+        dialog = new Dialog("End Game", skin) {
             protected void result(Object object) {
                 bluetoothService.disconnect();
                 game.setScreen(game.lobbyScreen);
             };
         };
-        endDialog.button("Okay", 1);
+        dialogLabel = new Label("error", skin);
+        dialog.text(dialogLabel);
+        dialog.button("Okay", 1);
 
-        errorDialog = new Dialog("Error", skin) {
-            protected void result(Object object) {
-                bluetoothService.disconnect();
-                game.setScreen(game.lobbyScreen);
+        fieldSprite = new Sprite(new Texture(Gdx.files.local("field.png")));
+        fieldSprite.setPosition(Gdx.graphics.getWidth() / 2 - fieldSprite.getWidth() / 2, (Gdx.graphics.getHeight() - titleLabel.getHeight()) / 2 - fieldSprite.getHeight() / 2);
+        Rectangle fieldRect = fieldSprite.getBoundingRectangle();
+        float width = fieldRect.getWidth() / 3;
+        float height = fieldRect.getHeight() / 3;
+        collisionRectangles = new Rectangle[3][3];
+        for(int column = 0; column < 3; ++ column) {
+            for(int row = 0; row < 3; ++row) {
+                collisionRectangles[column][row] = new Rectangle(fieldRect.getX() + column * width, fieldRect.getY() + row * height, width, height);
             }
-        };
-        errorDialogLabel = new Label("error", skin);
-        errorDialog.text(errorDialogLabel);
-        errorDialog.button("Okay");
-
-        rootTable.add(gameTable).grow();
-
-        rootTable.row().bottom();
-        Table buttonTable = new Table(skin);
-        rootTable.add(buttonTable).fillX();
-
-        stage.addActor(rootTable);
-        stage.addActor(waitingForOpponentLabel);
+        }
     }
 
     private void processMessages() {
@@ -155,17 +120,20 @@ public class GameScreen implements Screen {
             switch(message.code) {
                 case BLUETOOTH_CONNECTED:
                     Gdx.app.log(Tag, "we have a connection");
-                    waitingForOpponent = false;
+                    gameRunning = true;
+                    // cancel the connection timeout
+                    Timer.instance().clear();
                     break;
                 case BLUETOOTH_ADAPTER_DISABLED:
-                    // this is bad, we have to stop the game
-                    showError("bluetooth was disabled");
-                    break;
                 case BLUETOOTH_DISCONNECTED:
-                    showError("bluetooth was disconnected");
-                    break;
                 case BLUETOOTH_ERROR:
-                    showError("bluetooth error");
+                    // this is bad, we have to stop the game
+                    if(!gameRunning) {
+                        // we have no problem if the game is already over
+                        break;
+                    }
+                    gameRunning = false;
+                    showDialog("Error", "bluetooth error: " + message.code.name());
                     break;
                 case BLUETOOTH_SENT:
                     Gdx.app.log(Tag, "bluetooth was sent");
@@ -177,9 +145,8 @@ public class GameScreen implements Screen {
                     String opponentString = received.substring(2,3);
                     int opponentValue = opponentString.equals("X") ? 1 : -1;
                     field[column][row] = opponentValue;
-                    buttons[column][row].setText(opponentString);
                     checkWinner();
-                    enableButtons();
+                    hasTurn = true;
                     break;
                 default:
                     Gdx.app.log(Tag, "message not handled, discarded");
@@ -193,28 +160,29 @@ public class GameScreen implements Screen {
             boolean draw = true;
             for(int column = 0; column < 3; ++column) {
                 for(int row = 0; row < 3; ++row) {
-                    if(field[column][row] != 0)
+                    if(field[column][row] == 0)
                         draw = false;
                 }
             }
             if(draw) {
-                endDialog.getTitleLabel().setText("It is a draw");
-                endDialog.show(stage);
+                showDialog("Game over", "It is a draw");
+                gameRunning = false;
             }
             return;
         }
         if(winner == playerValue) {
-            endDialog.getTitleLabel().setText("You won :)");
-            endDialog.show(stage);
+            showDialog("Game over", "You won :)");
+            gameRunning = false;
             return;
         }
-        endDialog.getTitleLabel().setText("You lost like a noob :(");
-        endDialog.show(stage);
+        showDialog("Game over", "You lost like a noob");
+        gameRunning = false;
     }
 
-    private void showError(String s) {
-        errorDialogLabel.setText(s);
-        errorDialog.show(stage);
+    private void showDialog(String title, String message) {
+        dialog.getTitleLabel().setText(title);
+        dialogLabel.setText(message);
+        dialog.show(stage);
     }
 
     @Override
@@ -225,7 +193,6 @@ public class GameScreen implements Screen {
         for(int column = 0; column < 3; ++column) {
             for(int row = 0; row < 3; ++row) {
                 field[column][row] = 0;
-                buttons[column][row].setText("");
             }
         }
 
@@ -235,47 +202,25 @@ public class GameScreen implements Screen {
             // we are the host, so our id is -1
             playerValue = -1;
             // the client always begins
-            disableButtons();
 
             // schedule a timeout because we are only visible for 30 seconds
             Timer.schedule(new Timer.Task() {
-                int n = 0;
                 @Override
                 public void run() {
-                    ++n;
-                    if(n > 30) {
-                        showError("no one connected");
-                    }
+                    showDialog("Timeout", "No client connected");
                 }
             }, 30);
 
             // we need to show the user that he is waiting, could be some fancy animation someday :)
-            waitingForOpponent = true;
+            gameRunning = false;
+            hasTurn = false;
         } else {
             // we are just a client so our id is 1
             playerValue = 1;
-            enableButtons();
 
             //no need to wait
-            waitingForOpponent = false;
-        }
-    }
-
-    private void enableButtons() {
-        for(int column = 0; column < 3; ++column) {
-            for(int row = 0; row < 3; ++row) {
-                buttons[column][row].setTouchable(Touchable.enabled);
-                buttons[column][row].setColor(1f, 1f, 1f, 1.0f);
-            }
-        }
-    }
-
-    private void disableButtons() {
-        for(int column = 0; column < 3; ++column) {
-            for(int row = 0; row < 3; ++row) {
-                buttons[column][row].setTouchable(Touchable.disabled);
-                buttons[column][row].setColor(0.5f, 0.5f, 0.5f, 1.0f);
-            }
+            gameRunning = true;
+            hasTurn = true;
         }
     }
 
@@ -286,13 +231,46 @@ public class GameScreen implements Screen {
             bluetoothService.disconnect();
             game.setScreen(game.lobbyScreen);
         }
+        if(Gdx.input.justTouched() && gameRunning && hasTurn) {
+            // the screen was tapped and we are allowed to take a turn
+            float x = Gdx.input.getX();
+            float y = Gdx.graphics.getHeight() - Gdx.input.getY();
+            for(int column = 0; column < 3; ++ column) {
+                for(int row = 0; row < 3; ++row) {
+                    if(collisionRectangles[column][row].contains(new Vector2(x, y))) {
+                        if(field[column][row] == 0) {
+                            Rectangle rect = collisionRectangles[column][row];
+                            hasTurn = false;
+                            // a play is allowed here
+                            field[column][row] = playerValue;
+                            String position = String.valueOf(column) + String.valueOf(row);
+                            String data = playerValue == 1 ? position + "X" : position + "O";
+                            bluetoothService.write(data.getBytes());
+                            checkWinner();
+                        }
+                    }
+                }
+            }
+        }
         processMessages();
         Gdx.gl.glClearColor(0.8f, 0.8f, 0.8f, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         game.batch.begin();
         game.batch.draw(game.background, 0, 0);
         game.batch.end();
-        waitingForOpponentLabel.setVisible(waitingForOpponent);
+        game.batch.begin();
+        fieldSprite.draw(game.batch);
+        for(int column = 0; column < 3; ++ column) {
+            for (int row = 0; row < 3; ++row) {
+                if(field[column][row] != 0) {
+                    Sprite sprite = field[column][row] == 1 ? xSprite : oSprite;
+                    Rectangle rect = collisionRectangles[column][row];
+                    sprite.setPosition(rect.x + rect.width / 2 - sprite.getWidth() / 2, rect.y + rect.height / 2 - sprite.getHeight() / 2);
+                    sprite.draw(game.batch);
+                }
+            }
+        }
+        game.batch.end();
         stage.act();
         stage.draw();
     }
@@ -316,6 +294,9 @@ public class GameScreen implements Screen {
     public void hide() {
         Gdx.app.log(Tag, "hiding");
         game.inputMultiplexer.clear();
+
+        // make sure no old dialogs are shown when we come back
+        dialog.remove();
     }
 
     @Override

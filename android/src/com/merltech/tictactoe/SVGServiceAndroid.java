@@ -2,8 +2,6 @@ package com.merltech.tictactoe;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Picture;
-import android.util.DisplayMetrics;
 import android.util.Log;
 
 import com.caverock.androidsvg.SVG;
