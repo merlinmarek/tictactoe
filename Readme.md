@@ -10,4 +10,4 @@ Screenshots:
 
 This application uses [androidsvg](https://github.com/BigBadaboom/androidsvg) which is licensed under the [Apache License V2](http://www.apache.org/licenses/LICENSE-2.0).
 
-The font [Orange Juice by brittney murphy](www.brittneymurphydesign.com) was used which is free for non-commercial applications.
+The font [Orange Juice by brittney murphy](https://www.brittneymurphydesign.com) was used which is free for non-commercial applications.
