@@ -45,12 +45,12 @@ public class LobbyScreen implements Screen {
         this.game = game;
         this.skin = game.skin;
         this.bluetoothService = game.bluetoothService;
+
         setupUi();
     }
 
     private void setupUi() {
         stage = new Stage(new ScreenViewport());
-
 
         Texture bluetoothIcon = new Texture(Gdx.files.local("bluetooth.png"));
         Drawable drawable = new TextureRegionDrawable(new TextureRegion(bluetoothIcon));
@@ -65,6 +65,7 @@ public class LobbyScreen implements Screen {
         noBluetoothDialog.text(enableBluetooth);
         noBluetoothDialog.button("Okay").center();
         noBluetoothDialog.setMovable(false);
+
         // default style
         TextButton.TextButtonStyle style = new TextButton("a", skin).getStyle();
         style.font = skin.getFont("small-font");

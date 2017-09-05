@@ -60,30 +60,45 @@ public class TicTacToe extends Game {
 	}
 
     private void generateGraphics() {
-        InputStream inputStream = Gdx.files.internal("ui/bluetooth.svg").read();
-        OutputStream outputStream = Gdx.files.local("bluetooth.png").write(false);
-        svgService.svg2png(inputStream, outputStream);
-        inputStream = Gdx.files.internal("ui/connect.svg").read();
-        outputStream = Gdx.files.local("connect.png").write(false);
-        svgService.svg2png(inputStream, outputStream);
-        inputStream = Gdx.files.internal("ui/background.svg").read();
-        outputStream = Gdx.files.local("background.png").write(false);
-        svgService.svg2png(inputStream, outputStream);
-        inputStream = Gdx.files.internal("ui/field.svg").read();
-        outputStream = Gdx.files.local("field.png").write(false);
-        svgService.svg2png(inputStream, outputStream);
-        inputStream = Gdx.files.internal("ui/X.svg").read();
-        outputStream = Gdx.files.local("X.png").write(false);
-        svgService.svg2png(inputStream, outputStream);
-        inputStream = Gdx.files.internal("ui/O.svg").read();
-        outputStream = Gdx.files.local("O.png").write(false);
-        svgService.svg2png(inputStream, outputStream);
+        InputStream inputStream;
+        OutputStream outputStream;
+        if(!Gdx.files.local("bluetooth.png").exists()) {
+            inputStream = Gdx.files.internal("ui/bluetooth.svg").read();
+            outputStream = Gdx.files.local("bluetooth.png").write(false);
+            svgService.scaleToDPI(inputStream, outputStream);
+        }
+        if(!Gdx.files.local("connect.png").exists()) {
+            inputStream = Gdx.files.internal("ui/connect.svg").read();
+            outputStream = Gdx.files.local("connect.png").write(false);
+            svgService.scaleToDPI(inputStream, outputStream);
+        }
+        if(!Gdx.files.local("background.png").exists()) {
+            inputStream = Gdx.files.internal("ui/background.svg").read();
+            outputStream = Gdx.files.local("background.png").write(false);
+            svgService.fill(inputStream, outputStream, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        }
+        if(!Gdx.files.local("field.png").exists()) {
+            inputStream = Gdx.files.internal("ui/field.svg").read();
+            outputStream = Gdx.files.local("field.png").write(false);
+            svgService.fit(inputStream, outputStream, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        }
+        if(!Gdx.files.local("X.png").exists()) {
+            inputStream = Gdx.files.internal("ui/X.svg").read();
+            outputStream = Gdx.files.local("X.png").write(false);
+            svgService.scaleToDPI(inputStream, outputStream);
+        }
+        if(!Gdx.files.local("O.png").exists()) {
+            inputStream = Gdx.files.internal("ui/O.svg").read();
+            outputStream = Gdx.files.local("O.png").write(false);
+            svgService.scaleToDPI(inputStream, outputStream);
+        }
     }
 
     private void generateFonts() {
         FreeTypeFontGenerator orangeJuiceGenerator = new FreeTypeFontGenerator(Gdx.files.internal("ui/orangejuice.ttf"));
         FreeTypeFontGenerator unispaceGenerator = new FreeTypeFontGenerator(Gdx.files.internal("ui/unispace.ttf"));
         FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+
         // this has to be related to density on screen
         parameter.size = (int)(density / 14);
         BitmapFont defaultFont = unispaceGenerator.generateFont(parameter);
@@ -91,6 +106,7 @@ public class TicTacToe extends Game {
         BitmapFont smallFont = orangeJuiceGenerator.generateFont(parameter);
         parameter.size = (int)(density / 4);
         BitmapFont bigFont = orangeJuiceGenerator.generateFont(parameter);
+
         skin = new Skin();
         skin.add("default-font", defaultFont, BitmapFont.class);
         skin.add("small-font", smallFont, BitmapFont.class);
@@ -102,6 +118,7 @@ public class TicTacToe extends Game {
         }
         skin.load(fileHandle);
         orangeJuiceGenerator.dispose();
+        unispaceGenerator.dispose();
     }
 
     @Override
